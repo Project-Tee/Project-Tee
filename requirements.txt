@@ -1,4 +1,4 @@
 pyalsaaudio
 --upgrade google-cloud-speech
 googletrans
-transformers
+google-cloud-translate
