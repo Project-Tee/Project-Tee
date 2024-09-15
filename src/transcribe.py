@@ -21,8 +21,6 @@ YELLOW = "\033[0;33m"
 DISPLAY_FILE = "todisplay.txt"
 
 
-
-
 def get_current_time() -> int:
     """Return Current Time in MS.
 
@@ -181,7 +179,6 @@ class ResumableMicrophoneStream:
 def Get_Audio():
     # Your external function to get the streaming audio input
     # Replace this with your actual implementation
-
     mic = get_mic(CHUNK_SIZE / 1000.0, SAMPLE_RATE)
     while True:
         yield get_audio(mic)

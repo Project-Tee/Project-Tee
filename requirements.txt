@@ -1,2 +1,5 @@
 pyalsaaudio
 google-cloud-speech
+googletrans
+google-cloud-translate
+>>>>>>> b65a4a4b0d7d30533f7da285fff8d7b12d24f90e
