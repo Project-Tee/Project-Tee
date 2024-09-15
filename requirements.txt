@@ -1,1 +1,2 @@
 pyalsaaudio
+google-cloud-speech

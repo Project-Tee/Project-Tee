@@ -1,2 +1,6 @@
 **/.DS_Store
 **/*.swp
+**/__pycache__
+
+# secret API key
+config/sa.speechtotextGoogleAPIAcc.json
