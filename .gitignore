@@ -1,7 +1,7 @@
 **/.DS_Store
 **/*.swp
-**/__pycache__
-src/todisplay.txt
+**/__pycache__/*
+tmp/*
 
 # secret API key
 config/sa.speechtotextGoogleAPIAcc.json

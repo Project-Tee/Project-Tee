@@ -17,7 +17,7 @@ font_size = 150
 
 font = pygame.font.Font(None, font_size)
 
-file_path = "todisplay.txt"
+DISPLAY_FILE = os.path.dirname(os.path.realpath(__file__)) + "../tmp/todisplay.txt"
 
 languages = [
     'en-US',  # English (US)
@@ -53,8 +53,8 @@ def wrap_text(text, font, max_width):
     return wrapped_lines
 
 def read_translation():
-	if os.path.exists(file_path):
-		with open(file_path, 'r') as file:
+	if os.path.exists(DISPLAY_FILE):
+		with open(DISPLAY_FILE, 'r') as file:
 			return file.read()[-70:]
 	return ""
 

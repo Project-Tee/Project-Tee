@@ -19,7 +19,7 @@ RED = "\033[0;31m"
 GREEN = "\033[0;32m"
 YELLOW = "\033[0;33m"
 
-DISPLAY_FILE = "todisplay.txt"
+DISPLAY_FILE = os.path.dirname(os.path.realpath(__file__)) + "../tmp/todisplay.txt"
 
 model = "default"
 
