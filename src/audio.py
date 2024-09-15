@@ -15,6 +15,7 @@ def get_mic(sample_time: float = 1.0, sample_rate: int = 44100) -> aa.PCM:
 
     device = valid_devices[0]  # from above, len(valid_devices) == 1
     return aa.PCM(type=aa.PCM_CAPTURE,
+                  mode=aa.PCM_NONBLOCK,
                   device=device,
                   channels=1,
                   rate=sample_rate,
@@ -22,17 +23,10 @@ def get_mic(sample_time: float = 1.0, sample_rate: int = 44100) -> aa.PCM:
                   periodsize=int(sample_rate*sample_time)
                  )
 
-def get_audio(mic: aa.PCM, time: float = 5.0) -> bytes:
-    """Return audio from the mic that lasts at most the specified amount of time
-    """
-    period_time = mic.info()['period_time'] / 1.0e6  # microseconds to seconds
-    periods_needed = math.floor(time / period_time)
-    
-    audio = bytes()
-
-    for i in range(periods_needed):
-        while mic.avail() == 0:
-            pass
-        audio += mic.read()[1]
-    return audio
-    
+def get_audio(mic: aa.PCM) -> bytes:
+    """Return a period"""
+    read = (0, b'')
+    while read[0] == 0:
+        read = mic.read()
+    assert read[0] > 0
+    return read[1]

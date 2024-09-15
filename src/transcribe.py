@@ -2,9 +2,13 @@ import queue
 import re
 import sys
 import time
+import os
+import languagecode
 
-from google.cloud import speech
+from google.cloud import speech_v1p1beta1 as speech
 import threading
+
+from audio import get_mic, get_audio
 
 # Audio recording parameters
 STREAMING_LIMIT = 240000  # 4 minutes
@@ -14,6 +18,10 @@ CHUNK_SIZE = int(SAMPLE_RATE / 10)  # 100ms
 RED = "\033[0;31m"
 GREEN = "\033[0;32m"
 YELLOW = "\033[0;33m"
+
+DISPLAY_FILE = "todisplay.txt"
+
+model = "default"
 
 
 def get_current_time() -> int:
@@ -174,8 +182,10 @@ class ResumableMicrophoneStream:
 def Get_Audio():
     # Your external function to get the streaming audio input
     # Replace this with your actual implementation
+
+    mic = get_mic(CHUNK_SIZE / 1000.0, SAMPLE_RATE)
     while True:
-        yield b'\x00\x00\x00\x00'  # Replace with your actual audio data
+        yield get_audio(mic)
 
 
 def listen_print_loop(responses: object, stream: object) -> None:
@@ -232,6 +242,9 @@ def listen_print_loop(responses: object, stream: object) -> None:
         # line, so subsequent lines will overwrite them.
 
         if result.is_final:
+            # NOTE: SENTENCE FINISHED
+            with open(DISPLAY_FILE, "w") as f:
+                f.write(transcript)
             sys.stdout.write(GREEN)
             sys.stdout.write("\033[K")
             sys.stdout.write(str(corrected_time) + ": " + transcript + "\n")
@@ -246,6 +259,8 @@ def listen_print_loop(responses: object, stream: object) -> None:
                 stream.closed = True
                 break
         else:
+            with open(DISPLAY_FILE, "w") as f:
+                f.write(transcript)
             sys.stdout.write(RED)
             sys.stdout.write("\033[K")
             sys.stdout.write(str(corrected_time) + ": " + transcript + "\r")
@@ -259,9 +274,13 @@ def main() -> None:
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=SAMPLE_RATE,
-        language_code="en-US",
+        language_code=languagecode.get_language_code(),
+        alternative_language_codes=["cmn-Hans-CN", "fr-FR", "ja-JP"],
         max_alternatives=1,
+        model = model
     )
+
+
 
     streaming_config = speech.StreamingRecognitionConfig(
         config=config, interim_results=True
@@ -278,6 +297,11 @@ def main() -> None:
 
     with mic_manager as stream:
         while not stream.closed:
+            langcode = languagecode.get_language_code();
+
+            if config.language_code != langcode:
+                config.language_code = langcode
+
             sys.stdout.write(YELLOW)
             sys.stdout.write(
                 "\n" + str(STREAMING_LIMIT * stream.restart_counter) + ": NEW REQUEST\n"
@@ -308,4 +332,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.dirname(os.path.realpath(__file__)) + "/../config/sa.speechtotextGoogleAPIAcc.json"
     main()

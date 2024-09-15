@@ -1,4 +1,5 @@
 pyalsaaudio
---upgrade google-cloud-speech
 googletrans
 google-cloud-translate
+google-cloud-speech
+pygame==2.1.2
