@@ -20,8 +20,4 @@ def translate_text(target: str, text: str) -> str:
     # will return a sequence of results for each text.
     result = translate_client.translate(text, target_language=target)
 
-    print("Text: {}".format(result["input"]))
-    print("Translation: {}".format(result["translatedText"]))
-    print("Detected source language: {}".format(result["detectedSourceLanguage"]))
-
     return result['translatedText'] + '\n'

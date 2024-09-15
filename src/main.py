@@ -21,13 +21,33 @@ GREEN = "\033[0;32m"
 YELLOW = "\033[0;33m"
 
 DISPLAY_FILE = os.path.dirname(os.path.realpath(__file__)) + "/../tmp/todisplay.txt"
-
-DEFAULT_INPUT_LANGUAGE = "fr-FR"
-DEFAULT_OUTPUT_LANGUAGE = "en-US"
+LANGUAGE_CODE_FILE = os.path.dirname(os.path.realpath(__file__)) + "/../tmp/langcode.txt"
 
 model = "default"
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.dirname(os.path.realpath(__file__)) + "/../config/sa.speechtotextGoogleAPIAcc.json"
+
+client = None
+
+languages = [
+    'en-US',  # English (US)
+    'fr-FR',  # French
+    'es-ES',  # Spanish
+    'cmn-Hans-CN',  # Chinese
+    'ja-JP'   # Japanese
+]
+
+DEFAULT_INPUT_LANGUAGE = languages[0]
+DEFAULT_OUTPUT_LANGUAGE = "en-US"
+
+current_language = DEFAULT_INPUT_LANGUAGE
+assert current_language in languages
+
+def get_next_language_code(current_language):
+    current_index = languages.index(current_language)
+    next_index = (current_index + 1) % len(languages)
+    return languages[next_index]
+
 
 def get_current_time() -> int:
     """Return Current Time in MS.
@@ -192,7 +212,7 @@ def Get_Audio():
         yield get_audio(mic)
 
 
-def listen_print_loop(responses: object, stream: object, output_language: str) -> None:
+def listen_print_loop(responses: object, stream: object, input_language: str, output_language: str) -> None:
     """Iterates through server responses and prints them.
 
     The responses passed is a generator that will block until a response
@@ -246,7 +266,11 @@ def listen_print_loop(responses: object, stream: object, output_language: str) -
         # line, so subsequent lines will overwrite them.
 
         with open(DISPLAY_FILE, "w") as f:
-            f.write(translate_text(output_language, transcript))
+            if input_language == output_language:
+                text = transcript
+            else:
+                text = translate_text(output_language, transcript)
+            f.write(text)
 
         if result.is_final:
             sys.stdout.write(GREEN)
@@ -272,6 +296,8 @@ def listen_print_loop(responses: object, stream: object, output_language: str) -
 
 def main(input_language: str, output_language: str) -> None:
     """start bidirectional streaming from microphone input to speech API"""
+    print(f"Beginning transcription {input_language} -> {output_language}")
+    global client
     client = speech.SpeechClient()
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
@@ -285,31 +311,23 @@ def main(input_language: str, output_language: str) -> None:
     )
 
     mic_manager = ResumableMicrophoneStream(SAMPLE_RATE, CHUNK_SIZE)
-    print(mic_manager.chunk_size)
-    sys.stdout.write(YELLOW)
-    sys.stdout.write('\nListening, say "Quit" or "Exit" to stop.\n\n')
-    sys.stdout.write("End (ms)       Transcript Results/Status\n")
-    sys.stdout.write("=====================================================\n")
 
     audio_generator = Get_Audio()
 
     with mic_manager as stream:
         while not stream.closed:
-            sys.stdout.write(YELLOW)
-            sys.stdout.write(
-                "\n" + str(STREAMING_LIMIT * stream.restart_counter) + ": NEW REQUEST\n"
-            )
-
             stream.audio_input = []
             requests = (
                 speech.StreamingRecognizeRequest(audio_content=content)
                 for content in audio_generator
             )
 
+            print("Getting responses")
             responses = client.streaming_recognize(streaming_config, requests)
+            print("Gottem")
 
             # Now, put the transcription responses to use.
-            listen_print_loop(responses, stream, output_language)
+            listen_print_loop(responses, stream, input_language, output_language)
 
             if stream.result_end_time > 0:
                 stream.final_request_end_time = stream.is_final_end_time
@@ -324,5 +342,18 @@ def main(input_language: str, output_language: str) -> None:
             stream.new_stream = True
 
 
+def handle_signal(a, b) -> None:
+    global current_language
+    current_language = get_next_language_code(current_language)
+    global client
+    if client is not None:
+        client.__exit__(None, None, None)
+        client = None
+        time.sleep(1)
+    print(f"Switching input to {current_language}")
+    main(current_language, DEFAULT_OUTPUT_LANGUAGE)
+    exit()
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGUSR1, handle_signal)
     main(DEFAULT_INPUT_LANGUAGE, DEFAULT_OUTPUT_LANGUAGE)
