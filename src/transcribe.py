@@ -23,7 +23,6 @@ DISPLAY_FILE = "todisplay.txt"
 
 model = "default"
 
-
 def get_current_time() -> int:
     """Return Current Time in MS.
 
@@ -182,7 +181,6 @@ class ResumableMicrophoneStream:
 def Get_Audio():
     # Your external function to get the streaming audio input
     # Replace this with your actual implementation
-
     mic = get_mic(CHUNK_SIZE / 1000.0, SAMPLE_RATE)
     while True:
         yield get_audio(mic)
@@ -275,13 +273,10 @@ def main() -> None:
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=SAMPLE_RATE,
         language_code=languagecode.get_language_code(),
-        alternative_language_codes=["cmn-Hans-CN", "fr-FR", "ja-JP"],
+        #alternative_language_codes=["cmn-Hans-CN", "fr-FR", "ja-JP"],
         max_alternatives=1,
         model = model
     )
-
-
-
     streaming_config = speech.StreamingRecognitionConfig(
         config=config, interim_results=True
     )

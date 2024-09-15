@@ -1,2 +1,8 @@
 **/.DS_Store
 **/*.swp
+**/__pycache__
+src/todisplay.txt
+
+# secret API key
+config/sa.speechtotextGoogleAPIAcc.json
+config/translate_api_key.txt
