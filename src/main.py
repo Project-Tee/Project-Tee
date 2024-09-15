@@ -355,5 +355,17 @@ def handle_signal(a, b) -> None:
     exit()
 
 if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        if sys.argv[1] == '-l':
+            print("Available languages:")
+            for l in languages:
+                print(f"  {l}")
+            exit(0)
+        else:
+            inlang = sys.argv[1]
+    else:
+        inlang = DEFAULT_INPUT_LANGUAGE
+    outlang = DEFAULT_OUTPUT_LANGUAGE
+
     signal.signal(signal.SIGUSR1, handle_signal)
-    main(DEFAULT_INPUT_LANGUAGE, DEFAULT_OUTPUT_LANGUAGE)
+    main(inlang, outlang)

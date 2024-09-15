@@ -78,11 +78,11 @@ def main():
 					if event.type == pygame.FINGERDOWN:
 						index += 1
 						color = [(0, 0, 0), (0, 0, 255), (199, 127, 0), (255, 0, 0), (125, 125, 125)][index % 5]
-						for proc in psutil.process_iter():
-							cmdline = proc.cmdline()
-							if len(cmdline) >= 2 and "python" in cmdline[0] and "main.py" in cmdline[1]:
-								print(f"Killed {proc.cmdline()}")
-								os.kill(proc.pid, signal.SIGUSR1)
+						# for proc in psutil.process_iter():
+						#	cmdline = proc.cmdline()
+						#	if len(cmdline) >= 2 and "python" in cmdline[0] and "main.py" in cmdline[1]:
+						#		print(f"Killed {proc.cmdline()}")
+						#		os.kill(proc.pid, signal.SIGUSR1)
 		time.sleep(0.5)
 
 	pygame.quit()
