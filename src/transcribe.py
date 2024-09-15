@@ -3,12 +3,13 @@ import re
 import sys
 import time
 import os
-import languagecode
+import signal
 
 from google.cloud import speech_v1p1beta1 as speech
 import threading
 
 from audio import get_mic, get_audio
+from translate import translate_text
 
 # Audio recording parameters
 STREAMING_LIMIT = 240000  # 4 minutes
@@ -19,9 +20,14 @@ RED = "\033[0;31m"
 GREEN = "\033[0;32m"
 YELLOW = "\033[0;33m"
 
-DISPLAY_FILE = os.path.dirname(os.path.realpath(__file__)) + "../tmp/todisplay.txt"
+DISPLAY_FILE = os.path.dirname(os.path.realpath(__file__)) + "/../tmp/todisplay.txt"
+
+DEFAULT_INPUT_LANGUAGE = "fr-FR"
+DEFAULT_OUTPUT_LANGUAGE = "en-US"
 
 model = "default"
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.dirname(os.path.realpath(__file__)) + "/../config/sa.speechtotextGoogleAPIAcc.json"
 
 def get_current_time() -> int:
     """Return Current Time in MS.
@@ -186,7 +192,7 @@ def Get_Audio():
         yield get_audio(mic)
 
 
-def listen_print_loop(responses: object, stream: object) -> None:
+def listen_print_loop(responses: object, stream: object, output_language: str) -> None:
     """Iterates through server responses and prints them.
 
     The responses passed is a generator that will block until a response
@@ -239,10 +245,10 @@ def listen_print_loop(responses: object, stream: object) -> None:
         # Display interim results, but with a carriage return at the end of the
         # line, so subsequent lines will overwrite them.
 
+        with open(DISPLAY_FILE, "w") as f:
+            f.write(translate_text(output_language, transcript))
+
         if result.is_final:
-            # NOTE: SENTENCE FINISHED
-            with open(DISPLAY_FILE, "w") as f:
-                f.write(transcript)
             sys.stdout.write(GREEN)
             sys.stdout.write("\033[K")
             sys.stdout.write(str(corrected_time) + ": " + transcript + "\n")
@@ -257,8 +263,6 @@ def listen_print_loop(responses: object, stream: object) -> None:
                 stream.closed = True
                 break
         else:
-            with open(DISPLAY_FILE, "w") as f:
-                f.write(transcript)
             sys.stdout.write(RED)
             sys.stdout.write("\033[K")
             sys.stdout.write(str(corrected_time) + ": " + transcript + "\r")
@@ -266,14 +270,13 @@ def listen_print_loop(responses: object, stream: object) -> None:
             stream.last_transcript_was_final = False
 
 
-def main() -> None:
+def main(input_language: str, output_language: str) -> None:
     """start bidirectional streaming from microphone input to speech API"""
     client = speech.SpeechClient()
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=SAMPLE_RATE,
-        language_code=languagecode.get_language_code(),
-        #alternative_language_codes=["cmn-Hans-CN", "fr-FR", "ja-JP"],
+        language_code=input_language,
         max_alternatives=1,
         model = model
     )
@@ -292,11 +295,6 @@ def main() -> None:
 
     with mic_manager as stream:
         while not stream.closed:
-            langcode = languagecode.get_language_code();
-
-            if config.language_code != langcode:
-                config.language_code = langcode
-
             sys.stdout.write(YELLOW)
             sys.stdout.write(
                 "\n" + str(STREAMING_LIMIT * stream.restart_counter) + ": NEW REQUEST\n"
@@ -311,7 +309,7 @@ def main() -> None:
             responses = client.streaming_recognize(streaming_config, requests)
 
             # Now, put the transcription responses to use.
-            listen_print_loop(responses, stream)
+            listen_print_loop(responses, stream, output_language)
 
             if stream.result_end_time > 0:
                 stream.final_request_end_time = stream.is_final_end_time
@@ -327,5 +325,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.dirname(os.path.realpath(__file__)) + "/../config/sa.speechtotextGoogleAPIAcc.json"
-    main()
+    main(DEFAULT_INPUT_LANGUAGE, DEFAULT_OUTPUT_LANGUAGE)

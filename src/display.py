@@ -17,7 +17,7 @@ font_size = 150
 
 font = pygame.font.Font(None, font_size)
 
-DISPLAY_FILE = os.path.dirname(os.path.realpath(__file__)) + "../tmp/todisplay.txt"
+DISPLAY_FILE = os.path.dirname(os.path.realpath(__file__)) + "/../tmp/todisplay.txt"
 
 languages = [
     'en-US',  # English (US)
